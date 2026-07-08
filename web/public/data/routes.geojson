@@ -1,0 +1,208 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            23.944444,
+            37.936389
+          ],
+          [
+            4.763889,
+            52.308613
+          ]
+        ]
+      },
+      "properties": {
+        "id": 0,
+        "date": "2010-06-15",
+        "year": 2010,
+        "month": "2010-06",
+        "from": "ATH",
+        "to": "AMS",
+        "operator": "KL",
+        "flightNumber": "1572",
+        "aircraft": "737",
+        "distanceKm": 2181.749529048568,
+        "co2Kg": 250.90119584058533
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.763889,
+            52.308613
+          ],
+          [
+            2.547778,
+            49.009722
+          ]
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "date": "2012-09-03",
+        "year": 2012,
+        "month": "2012-09",
+        "from": "AMS",
+        "to": "CDG",
+        "operator": "KL",
+        "flightNumber": "1234",
+        "aircraft": "737",
+        "distanceKm": 398.64944439709006,
+        "co2Kg": 45.84468610566536
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.547778,
+            49.009722
+          ],
+          [
+            -0.461389,
+            51.4775
+          ]
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "date": "2015-04-21",
+        "year": 2015,
+        "month": "2015-04",
+        "from": "CDG",
+        "to": "LHR",
+        "operator": "AF",
+        "flightNumber": "108",
+        "aircraft": "A320",
+        "distanceKm": 347.9149437007185,
+        "co2Kg": 40.01021852558263
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.763889,
+            52.308613
+          ],
+          [
+            -73.778139,
+            40.641311
+          ]
+        ]
+      },
+      "properties": {
+        "id": 3,
+        "date": "2018-11-10",
+        "year": 2018,
+        "month": "2018-11",
+        "from": "AMS",
+        "to": "JFK",
+        "operator": "KL",
+        "flightNumber": "641",
+        "aircraft": "777",
+        "distanceKm": 5847.371800178773,
+        "co2Kg": 672.4477570205589
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -73.778139,
+            40.641311
+          ],
+          [
+            4.763889,
+            52.308613
+          ]
+        ]
+      },
+      "properties": {
+        "id": 4,
+        "date": "2019-03-02",
+        "year": 2019,
+        "month": "2019-03",
+        "from": "JFK",
+        "to": "AMS",
+        "operator": "KL",
+        "flightNumber": "642",
+        "aircraft": "777",
+        "distanceKm": 5847.371800178773,
+        "co2Kg": 672.4477570205589
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.763889,
+            52.308613
+          ],
+          [
+            23.944444,
+            37.936389
+          ]
+        ]
+      },
+      "properties": {
+        "id": 5,
+        "date": "2022-07-18",
+        "year": 2022,
+        "month": "2022-07",
+        "from": "AMS",
+        "to": "ATH",
+        "operator": "KL",
+        "flightNumber": "1571",
+        "aircraft": "737",
+        "distanceKm": 2181.749529048568,
+        "co2Kg": 250.90119584058533
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            8.728111,
+            45.630556
+          ],
+          [
+            4.763889,
+            52.308613
+          ]
+        ]
+      },
+      "properties": {
+        "id": 6,
+        "date": "2024-05-05",
+        "year": 2024,
+        "month": "2024-05",
+        "from": "MXP",
+        "to": "AMS",
+        "operator": "KL",
+        "flightNumber": "1638",
+        "aircraft": "737",
+        "distanceKm": 796.6494649933117,
+        "co2Kg": 91.61468847423085
+      }
+    }
+  ]
+}

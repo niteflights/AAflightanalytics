@@ -1,0 +1,251 @@
+{
+  "totals": {
+    "flights": 7,
+    "distanceKm": 17601.456511545803,
+    "co2Kg": 2024.1674988277675,
+    "uniqueAirports": 6,
+    "years": [
+      2010,
+      2012,
+      2015,
+      2018,
+      2019,
+      2022,
+      2024
+    ],
+    "months": [
+      "2010-06",
+      "2012-09",
+      "2015-04",
+      "2018-11",
+      "2019-03",
+      "2022-07",
+      "2024-05"
+    ],
+    "airlines": [
+      "AF",
+      "KL"
+    ]
+  },
+  "airlines": [
+    {
+      "airline": "KL",
+      "flights": 6,
+      "totalDistanceKm": 17253.541567845085,
+      "avgLegKm": 2875.590261307514,
+      "totalCo2Kg": 1984.1572803021847
+    },
+    {
+      "airline": "AF",
+      "flights": 1,
+      "totalDistanceKm": 347.9149437007185,
+      "avgLegKm": 347.9149437007185,
+      "totalCo2Kg": 40.01021852558263
+    }
+  ],
+  "routes": [
+    {
+      "route": "AMS → JFK",
+      "flights": 1,
+      "totalDistanceKm": 5847.371800178773
+    },
+    {
+      "route": "JFK → AMS",
+      "flights": 1,
+      "totalDistanceKm": 5847.371800178773
+    },
+    {
+      "route": "AMS → ATH",
+      "flights": 1,
+      "totalDistanceKm": 2181.749529048568
+    },
+    {
+      "route": "ATH → AMS",
+      "flights": 1,
+      "totalDistanceKm": 2181.749529048568
+    },
+    {
+      "route": "MXP → AMS",
+      "flights": 1,
+      "totalDistanceKm": 796.6494649933117
+    },
+    {
+      "route": "AMS → CDG",
+      "flights": 1,
+      "totalDistanceKm": 398.64944439709006
+    },
+    {
+      "route": "CDG → LHR",
+      "flights": 1,
+      "totalDistanceKm": 347.9149437007185
+    }
+  ],
+  "airports": [
+    {
+      "iata": "AMS",
+      "departures": 3,
+      "arrivals": 3,
+      "movements": 6,
+      "uniqueConnections": 4
+    },
+    {
+      "iata": "ATH",
+      "departures": 1,
+      "arrivals": 1,
+      "movements": 2,
+      "uniqueConnections": 1
+    },
+    {
+      "iata": "CDG",
+      "departures": 1,
+      "arrivals": 1,
+      "movements": 2,
+      "uniqueConnections": 2
+    },
+    {
+      "iata": "JFK",
+      "departures": 1,
+      "arrivals": 1,
+      "movements": 2,
+      "uniqueConnections": 1
+    },
+    {
+      "iata": "LHR",
+      "departures": 0,
+      "arrivals": 1,
+      "movements": 1,
+      "uniqueConnections": 1
+    },
+    {
+      "iata": "MXP",
+      "departures": 1,
+      "arrivals": 0,
+      "movements": 1,
+      "uniqueConnections": 1
+    }
+  ],
+  "newAirportsPerYear": [
+    {
+      "year": 2010,
+      "newAirports": 2
+    },
+    {
+      "year": 2012,
+      "newAirports": 1
+    },
+    {
+      "year": 2015,
+      "newAirports": 1
+    },
+    {
+      "year": 2018,
+      "newAirports": 1
+    },
+    {
+      "year": 2024,
+      "newAirports": 1
+    }
+  ],
+  "longestFlights": [
+    {
+      "date": "2018-11-10",
+      "route": "AMS → JFK",
+      "operator": "KL",
+      "distanceKm": 5847.371800178773,
+      "co2Kg": 672.4477570205589
+    },
+    {
+      "date": "2019-03-02",
+      "route": "JFK → AMS",
+      "operator": "KL",
+      "distanceKm": 5847.371800178773,
+      "co2Kg": 672.4477570205589
+    },
+    {
+      "date": "2010-06-15",
+      "route": "ATH → AMS",
+      "operator": "KL",
+      "distanceKm": 2181.749529048568,
+      "co2Kg": 250.90119584058533
+    },
+    {
+      "date": "2022-07-18",
+      "route": "AMS → ATH",
+      "operator": "KL",
+      "distanceKm": 2181.749529048568,
+      "co2Kg": 250.90119584058533
+    },
+    {
+      "date": "2024-05-05",
+      "route": "MXP → AMS",
+      "operator": "KL",
+      "distanceKm": 796.6494649933117,
+      "co2Kg": 91.61468847423085
+    },
+    {
+      "date": "2012-09-03",
+      "route": "AMS → CDG",
+      "operator": "KL",
+      "distanceKm": 398.64944439709006,
+      "co2Kg": 45.84468610566536
+    },
+    {
+      "date": "2015-04-21",
+      "route": "CDG → LHR",
+      "operator": "AF",
+      "distanceKm": 347.9149437007185,
+      "co2Kg": 40.01021852558263
+    }
+  ],
+  "shortestFlights": [
+    {
+      "date": "2015-04-21",
+      "route": "CDG → LHR",
+      "operator": "AF",
+      "distanceKm": 347.9149437007185,
+      "co2Kg": 40.01021852558263
+    },
+    {
+      "date": "2012-09-03",
+      "route": "AMS → CDG",
+      "operator": "KL",
+      "distanceKm": 398.64944439709006,
+      "co2Kg": 45.84468610566536
+    },
+    {
+      "date": "2024-05-05",
+      "route": "MXP → AMS",
+      "operator": "KL",
+      "distanceKm": 796.6494649933117,
+      "co2Kg": 91.61468847423085
+    },
+    {
+      "date": "2010-06-15",
+      "route": "ATH → AMS",
+      "operator": "KL",
+      "distanceKm": 2181.749529048568,
+      "co2Kg": 250.90119584058533
+    },
+    {
+      "date": "2022-07-18",
+      "route": "AMS → ATH",
+      "operator": "KL",
+      "distanceKm": 2181.749529048568,
+      "co2Kg": 250.90119584058533
+    },
+    {
+      "date": "2018-11-10",
+      "route": "AMS → JFK",
+      "operator": "KL",
+      "distanceKm": 5847.371800178773,
+      "co2Kg": 672.4477570205589
+    },
+    {
+      "date": "2019-03-02",
+      "route": "JFK → AMS",
+      "operator": "KL",
+      "distanceKm": 5847.371800178773,
+      "co2Kg": 672.4477570205589
+    }
+  ]
+}

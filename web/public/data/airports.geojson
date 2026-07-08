@@ -1,0 +1,119 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.763889,
+          52.308613
+        ]
+      },
+      "properties": {
+        "iata": "AMS",
+        "name": "Amsterdam Schiphol",
+        "city": "Amsterdam",
+        "country": "Netherlands",
+        "movements": 6,
+        "departures": 3,
+        "arrivals": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          23.944444,
+          37.936389
+        ]
+      },
+      "properties": {
+        "iata": "ATH",
+        "name": "Athens Eleftherios Venizelos",
+        "city": "Athens",
+        "country": "Greece",
+        "movements": 2,
+        "departures": 1,
+        "arrivals": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          2.547778,
+          49.009722
+        ]
+      },
+      "properties": {
+        "iata": "CDG",
+        "name": "Charles de Gaulle",
+        "city": "Paris",
+        "country": "France",
+        "movements": 2,
+        "departures": 1,
+        "arrivals": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.778139,
+          40.641311
+        ]
+      },
+      "properties": {
+        "iata": "JFK",
+        "name": "John F. Kennedy",
+        "city": "New York",
+        "country": "United States",
+        "movements": 2,
+        "departures": 1,
+        "arrivals": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.461389,
+          51.4775
+        ]
+      },
+      "properties": {
+        "iata": "LHR",
+        "name": "London Heathrow",
+        "city": "London",
+        "country": "United Kingdom",
+        "movements": 1,
+        "departures": 0,
+        "arrivals": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.728111,
+          45.630556
+        ]
+      },
+      "properties": {
+        "iata": "MXP",
+        "name": "Malpensa",
+        "city": "Milan",
+        "country": "Italy",
+        "movements": 1,
+        "departures": 1,
+        "arrivals": 0
+      }
+    }
+  ]
+}
