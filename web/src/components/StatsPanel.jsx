@@ -13,6 +13,10 @@ export default function StatsPanel({ stats, filteredTotals, filters, setFilters,
 
   return (
     <>
+      <div style={{ background: 'yellow', padding: '10px', fontWeight: 'bold' }}>
+      DEBUG: StatsPanel updated
+      </div>
+      
       <div className="card">
         <h2>Visible selection</h2>
         <div className="metrics">
