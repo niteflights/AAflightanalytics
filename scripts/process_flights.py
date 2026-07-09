@@ -283,6 +283,135 @@ def process(input_file, airports_file, output_dir, co2_factor=0.115, rfi=1.0):
         .sort_values(["flights", "totalDistanceKm"], ascending=[False, False])
     )
 
+    # ---------------------------------------------------------
+    # FUN FACTS
+    # ---------------------------------------------------------
+
+    total_flights = int(len(enriched))
+    total_distance = float(enriched["distance_km"].dropna().sum())
+
+    # Reference distances
+    EARTH_CIRCUMFERENCE_KM = 40075
+    MOON_DISTANCE_KM = 384400
+    AVERAGE_MARS_DISTANCE_KM = 225000000
+
+    # Approximate great-circle distance AMS–ATH
+    AMS_ATH_DISTANCE_KM = 2183
+
+    # Distance comparisons
+    times_around_earth = (
+        total_distance / EARTH_CIRCUMFERENCE_KM
+        if total_distance > 0 else 0
+    )
+
+    percent_to_moon = (
+        total_distance / MOON_DISTANCE_KM * 100
+        if total_distance > 0 else 0
+    )
+
+    percent_to_mars = (
+        total_distance / AVERAGE_MARS_DISTANCE_KM * 100
+        if total_distance > 0 else 0
+    )
+
+    ams_ath_equivalent = (
+        total_distance / AMS_ATH_DISTANCE_KM
+        if total_distance > 0 else 0
+    )
+
+    # ---------------------------------------------------------
+    # ESTIMATED TIME IN THE AIR
+    #
+    # Assumption:
+    # distance / 800 km/h
+    # + 30 minutes per flight for climb/descent/lower-speed phases
+    # ---------------------------------------------------------
+
+    estimated_flight_hours = (
+        total_distance / 800
+        + total_flights * 0.5
+    )
+
+    estimated_days_in_air = estimated_flight_hours / 24
+
+    # ---------------------------------------------------------
+    # AVERAGE FLIGHTS PER YEAR AND MONTH
+    #
+    # Calculated across the full calendar span of the flight log
+    # ---------------------------------------------------------
+
+    flight_years = sorted(
+        int(y)
+        for y in enriched["year"].dropna().unique()
+    )
+
+    if flight_years:
+        first_year = min(flight_years)
+        last_year = max(flight_years)
+
+        calendar_year_span = last_year - first_year + 1
+        calendar_month_span = calendar_year_span * 12
+
+        average_flights_per_year = (
+            total_flights / calendar_year_span
+        )
+
+        average_flights_per_month = (
+            total_flights / calendar_month_span
+        )
+
+    else:
+        first_year = None
+        last_year = None
+        average_flights_per_year = 0
+        average_flights_per_month = 0
+
+    # ---------------------------------------------------------
+    # LONGEST CONSECUTIVE STREAK OF YEARS WITH AT LEAST ONE FLIGHT
+    # ---------------------------------------------------------
+
+    longest_streak = 0
+    current_streak = 0
+    streak_start = None
+    streak_end = None
+    current_start = None
+    previous_year = None
+
+    for year in flight_years:
+
+        if previous_year is None or year == previous_year + 1:
+            current_streak += 1
+
+            if current_start is None:
+                current_start = year
+
+        else:
+            current_streak = 1
+            current_start = year
+
+        if current_streak > longest_streak:
+            longest_streak = current_streak
+            streak_start = current_start
+            streak_end = year
+
+        previous_year = year
+
+    fun_facts = {
+        "timesAroundEarth": times_around_earth,
+        "percentToMoon": percent_to_moon,
+        "percentToMars": percent_to_mars,
+        "amsAthensEquivalent": ams_ath_equivalent,
+        "estimatedFlightHours": estimated_flight_hours,
+        "estimatedDaysInAir": estimated_days_in_air,
+        "averageFlightsPerYear": average_flights_per_year,
+        "averageFlightsPerMonth": average_flights_per_month,
+        "longestFlyingYearStreak": {
+            "years": longest_streak,
+            "from": streak_start,
+            "to": streak_end
+        }
+    }
+    
     stats = {
         "totals": {
             "flights": int(len(enriched)),
@@ -292,6 +421,7 @@ def process(input_file, airports_file, output_dir, co2_factor=0.115, rfi=1.0):
             "years": sorted([int(x) for x in enriched["year"].dropna().unique().tolist()]),
             "months": sorted(enriched["month"].dropna().unique().tolist()),
             "airlines": sorted(enriched["operator"].fillna("Unknown").unique().tolist()),
+            "funFacts": fun_facts,
         },
         "airlines": airline_stats.to_dict(orient="records"),
         "routes": route_stats.head(100).to_dict(orient="records"),
