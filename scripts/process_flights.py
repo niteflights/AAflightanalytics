@@ -421,8 +421,10 @@ def process(input_file, airports_file, output_dir, co2_factor=0.115, rfi=1.0):
             "years": sorted([int(x) for x in enriched["year"].dropna().unique().tolist()]),
             "months": sorted(enriched["month"].dropna().unique().tolist()),
             "airlines": sorted(enriched["operator"].fillna("Unknown").unique().tolist()),
-            "funFacts": fun_facts,
         },
+
+        "funFacts": fun_facts,
+        
         "airlines": airline_stats.to_dict(orient="records"),
         "routes": route_stats.head(100).to_dict(orient="records"),
         "airports": [],
