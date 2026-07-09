@@ -7,6 +7,10 @@ export default function StatsPanel({ stats, filteredTotals, filters, setFilters,
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
+  // Supports both locations:
+  // stats.funFacts and stats.totals.funFacts
+  const funFacts = stats.funFacts || stats.totals?.funFacts
+
   return (
     <>
       <div className="card">
@@ -19,102 +23,81 @@ export default function StatsPanel({ stats, filteredTotals, filters, setFilters,
         </div>
       </div>
 
-      <div className="card fun-facts-card">
-        <h2>My flight journey</h2>
+      {funFacts && (
+        <div className="card fun-facts-card">
+          <h2>My flight journey</h2>
 
-        <div className="fun-fact">
-          <span className="fun-icon">🌍</span>
-          <div>
-            <strong>
-              {stats.funFacts.timesAroundEarth.toFixed(2)}×
-            </strong>
-            <small>around the Earth</small>
+          <div className="fun-fact">
+            <span className="fun-icon">🌍</span>
+            <div>
+              <strong>{funFacts.timesAroundEarth?.toFixed(2)}×</strong>
+              <small>around the Earth</small>
+            </div>
+          </div>
+
+          <div className="fun-fact">
+            <span className="fun-icon">🌕</span>
+            <div>
+              <strong>{funFacts.percentToMoon?.toFixed(1)}%</strong>
+              <small>of the way to the Moon</small>
+            </div>
+          </div>
+
+          <div className="fun-fact">
+            <span className="fun-icon">🔴</span>
+            <div>
+              <strong>{funFacts.percentToMars?.toFixed(3)}%</strong>
+              <small>of the average distance to Mars</small>
+            </div>
+          </div>
+
+          <div className="fun-fact">
+            <span className="fun-icon">✈️</span>
+            <div>
+              <strong>{funFacts.amsAthensEquivalent?.toFixed(1)}</strong>
+              <small>Amsterdam–Athens flight distances</small>
+            </div>
+          </div>
+
+          <div className="fun-fact">
+            <span className="fun-icon">⏱️</span>
+            <div>
+              <strong>{funFacts.estimatedDaysInAir?.toFixed(1)} days</strong>
+              <small>estimated time spent flying</small>
+            </div>
+          </div>
+
+          <div className="fun-fact">
+            <span className="fun-icon">📅</span>
+            <div>
+              <strong>{funFacts.averageFlightsPerYear?.toFixed(1)}</strong>
+              <small>average flights per year</small>
+            </div>
+          </div>
+
+          <div className="fun-fact">
+            <span className="fun-icon">🗓️</span>
+            <div>
+              <strong>{funFacts.averageFlightsPerMonth?.toFixed(1)}</strong>
+              <small>average flights per month</small>
+            </div>
+          </div>
+
+          <div className="fun-fact">
+            <span className="fun-icon">🔥</span>
+            <div>
+              <strong>{funFacts.longestFlyingYearStreak?.years || 0} years</strong>
+              <small>
+                longest flying streak ·{' '}
+                {funFacts.longestFlyingYearStreak?.from || '—'}
+                {'–'}
+                {funFacts.longestFlyingYearStreak?.to || '—'}
+              </small>
+            </div>
           </div>
         </div>
+      )}
 
-        <div className="fun-fact">
-          <span className="fun-icon">🌕</span>
-          <div>
-            <strong>
-              {stats.funFacts.percentToMoon.toFixed(1)}%
-            </strong>
-            <small>of the way to the Moon</small>
-          </div>
-        </div>
-
-        <div className="fun-fact">
-          <span className="fun-icon">🔴</span>
-          <div>
-            <strong>
-              {stats.funFacts.percentToMars.toFixed(3)}%
-            </strong>
-            <small>of the average distance to Mars</small>
-          </div>
-        </div>
-
-        <div className="fun-fact">
-          <span className="fun-icon">✈️</span>
-          <div>
-            <strong>
-              {stats.funFacts.amsAthensEquivalent.toFixed(1)}
-            </strong>
-            <small>Amsterdam–Athens flight distances</small>
-          </div>
-        </div>
-
-        <div className="fun-fact">
-          <span className="fun-icon">⏱️</span>
-          <div>
-            <strong>
-              {stats.funFacts.estimatedDaysInAir.toFixed(1)} days
-            </strong>
-            <small>
-              estimated time spent flying
-            </small>
-          </div>
-        </div>
-
-        <div className="fun-fact">
-          <span className="fun-icon">📅</span>
-          <div>
-            <strong>
-              {stats.funFacts.averageFlightsPerYear.toFixed(1)}
-            </strong>
-            <small>
-              average flights per year
-            </small>
-          </div>
-        </div>
-
-        <div className="fun-fact">
-          <span className="fun-icon">🗓️</span>
-          <div>
-            <strong>
-              {stats.funFacts.averageFlightsPerMonth.toFixed(1)}
-            </strong>
-            <small>
-              average flights per month
-            </small>
-          </div>
-        </div>
-
-        <div className="fun-fact">
-          <span className="fun-icon">🔥</span>
-          <div>
-            <strong>
-              {stats.funFacts.longestFlyingYearStreak.years} years
-            </strong>
-            <small>
-              longest flying streak ·{' '}
-              {stats.funFacts.longestFlyingYearStreak.from}
-              {'–'}
-              {stats.funFacts.longestFlyingYearStreak.to}
-            </small>
-          </div>
-        </div>
-      </div>
-
-      
       <div className="card">
         <h2>Filters</h2>
 
