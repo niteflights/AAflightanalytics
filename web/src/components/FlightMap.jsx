@@ -1,38 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import {
-  Map,
-  NavigationControl,
-  FullscreenControl,
-  Popup
-} from 'maplibre-gl'
-
-const EMPTY_GEOJSON = {
-  type: 'FeatureCollection',
-  features: []
-}
-
-const MAP_STYLE = {
-  version: 8,
-  sources: {
-    basemap: {
-      type: 'raster',
-      tiles: [
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-      ],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors'
-    }
-  },
-  layers: [
-    {
-      id: 'basemap-layer',
-      type: 'raster',
-      source: 'basemap',
-      minzoom: 0,
-      maxzoom: 19
-    }
-  ]
-}
+import L from 'leaflet'
 
 export default function FlightMap({
   routes,
@@ -42,19 +9,10 @@ export default function FlightMap({
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
-
-  const routesRef = useRef(routes || EMPTY_GEOJSON)
-  const airportsRef = useRef(airports || EMPTY_GEOJSON)
+  const routeLayerRef = useRef(null)
+  const airportLayerRef = useRef(null)
   const flightsRef = useRef(flights || [])
   const onSelectFlightRef = useRef(onSelectFlight)
-
-  useEffect(() => {
-    routesRef.current = routes || EMPTY_GEOJSON
-  }, [routes])
-
-  useEffect(() => {
-    airportsRef.current = airports || EMPTY_GEOJSON
-  }, [airports])
 
   useEffect(() => {
     flightsRef.current = flights || []
@@ -64,129 +22,147 @@ export default function FlightMap({
     onSelectFlightRef.current = onSelectFlight
   }, [onSelectFlight])
 
+  /*
+   * Create the Leaflet map once.
+   */
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
       return
     }
 
-    const map = new Map({
-      container: containerRef.current,
-      style: MAP_STYLE,
-      center: [10, 35],
-      zoom: 1.4,
-      renderWorldCopies: true
+    const map = L.map(containerRef.current, {
+      center: [35, 10],
+      zoom: 2,
+      minZoom: 1,
+      worldCopyJump: true,
+      zoomControl: true
     })
+
+    L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        maxZoom: 19,
+        attribution:
+          '&copy; OpenStreetMap contributors'
+      }
+    ).addTo(map)
+
+    routeLayerRef.current = L.layerGroup().addTo(map)
+    airportLayerRef.current = L.layerGroup().addTo(map)
 
     mapRef.current = map
 
-    // Useful for checking the live map from Chrome Console.
-    window.flightMap = map
+    /*
+     * Leaflet sometimes needs a resize after React creates
+     * the page layout.
+     */
+    window.setTimeout(() => {
+      map.invalidateSize()
+    }, 250)
 
-    map.addControl(new NavigationControl(), 'top-right')
-    map.addControl(new FullscreenControl(), 'top-right')
+    const resizeMap = () => {
+      map.invalidateSize()
+    }
 
-    map.on('error', event => {
-      console.error('MapLibre error:', event.error || event)
-    })
+    window.addEventListener('resize', resizeMap)
 
-    map.on('load', () => {
-      console.log(
-        'Flight routes received:',
-        routesRef.current?.features?.length || 0
-      )
+    return () => {
+      window.removeEventListener('resize', resizeMap)
+      map.remove()
 
-      console.log(
-        'Airports received:',
-        airportsRef.current?.features?.length || 0
-      )
+      mapRef.current = null
+      routeLayerRef.current = null
+      airportLayerRef.current = null
+    }
+  }, [])
 
-      /*
-       * Add the latest data directly when creating each source.
-       */
-      map.addSource('flight-routes', {
-        type: 'geojson',
-        data: routesRef.current
-      })
+  /*
+   * Rebuild visible route lines whenever the filters change.
+   * The map's centre and zoom remain unchanged.
+   */
+  useEffect(() => {
+    const map = mapRef.current
+    const routeLayer = routeLayerRef.current
 
-      map.addSource('flight-airports', {
-        type: 'geojson',
-        data: airportsRef.current
-      })
+    if (!map || !routeLayer) {
+      return
+    }
 
-      /*
-       * Use deliberately simple styling first.
-       * This avoids expression/type issues while debugging.
-       */
-      map.addLayer({
-        id: 'flight-routes-line',
-        type: 'line',
-        source: 'flight-routes',
-        layout: {
-          visibility: 'visible',
-          'line-cap': 'round',
-          'line-join': 'round'
-        },
-        paint: {
-          'line-color': '#0057ff',
-          'line-width': 3,
-          'line-opacity': 0.9
-        }
-      })
+    routeLayer.clearLayers()
 
-      map.addLayer({
-        id: 'flight-airports-circle',
-        type: 'circle',
-        source: 'flight-airports',
-        layout: {
-          visibility: 'visible'
-        },
-        paint: {
-          'circle-radius': 7,
-          'circle-color': '#ff0000',
-          'circle-opacity': 1,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
-        }
-      })
+    const features = routes?.features || []
+
+    features.forEach(feature => {
+      if (
+        feature?.geometry?.type !== 'LineString' ||
+        !Array.isArray(feature.geometry.coordinates)
+      ) {
+        return
+      }
 
       /*
-       * Explicitly move both layers above the raster basemap.
+       * GeoJSON stores coordinates as:
+       * [longitude, latitude]
+       *
+       * Leaflet expects:
+       * [latitude, longitude]
        */
-      map.moveLayer('flight-routes-line')
-      map.moveLayer('flight-airports-circle')
+      const positions = feature.geometry.coordinates
+        .map(coordinate => {
+          if (
+            !Array.isArray(coordinate) ||
+            coordinate.length < 2
+          ) {
+            return null
+          }
 
-      map.setLayoutProperty(
-        'flight-routes-line',
-        'visibility',
-        'visible'
-      )
+          const longitude = Number(coordinate[0])
+          const latitude = Number(coordinate[1])
 
-      map.setLayoutProperty(
-        'flight-airports-circle',
-        'visibility',
-        'visible'
-      )
+          if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            longitude < -180 ||
+            longitude > 180
+          ) {
+            return null
+          }
 
-      map.triggerRepaint()
+          return [latitude, longitude]
+        })
+        .filter(Boolean)
 
-      console.log(
-        'Route layer created:',
-        Boolean(map.getLayer('flight-routes-line'))
-      )
+      if (positions.length < 2) {
+        return
+      }
 
-      console.log(
-        'Airport layer created:',
-        Boolean(map.getLayer('flight-airports-circle'))
-      )
+      const properties = feature.properties || {}
 
-      map.on('click', 'flight-routes-line', event => {
-        const feature = event.features?.[0]
+      const route = L.polyline(positions, {
+        color: '#2563eb',
+        weight: 2,
+        opacity: 0.68,
+        lineCap: 'round',
+        lineJoin: 'round'
+      })
 
-        if (!feature) {
-          return
-        }
+      route.on('mouseover', () => {
+        route.setStyle({
+          weight: 4,
+          opacity: 1
+        })
+      })
 
-        const properties = feature.properties || {}
+      route.on('mouseout', () => {
+        route.setStyle({
+          weight: 2,
+          opacity: 0.68
+        })
+      })
+
+      route.on('click', event => {
         const flightId = Number(properties.id)
 
         const selectedFlight = flightsRef.current.find(
@@ -206,145 +182,142 @@ export default function FlightMap({
           ? `${Math.round(distance).toLocaleString()} km`
           : 'Distance unavailable'
 
-        new Popup()
-          .setLngLat(event.lngLat)
-          .setHTML(`
+        const operatorText = [
+          properties.operator,
+          properties.flightNumber
+        ]
+          .filter(Boolean)
+          .join(' ')
+
+        L.popup()
+          .setLatLng(event.latlng)
+          .setContent(`
             <strong>
               ${properties.from || ''}
               →
               ${properties.to || ''}
             </strong>
-            <br />
+            <br>
             ${properties.date || ''}
-            <br />
-            ${properties.operator || ''}
-            ${properties.flightNumber || ''}
-            <br />
+            ${
+              operatorText
+                ? `<br>${operatorText}`
+                : ''
+            }
+            <br>
             ${distanceText}
           `)
-          .addTo(map)
+          .openOn(map)
       })
 
-      map.on('click', 'flight-airports-circle', event => {
-        const properties =
-          event.features?.[0]?.properties
-
-        if (!properties) {
-          return
-        }
-
-        const locationText = [
-          properties.city,
-          properties.country
-        ]
-          .filter(Boolean)
-          .join(', ')
-
-        new Popup()
-          .setLngLat(event.lngLat)
-          .setHTML(`
-            <strong>${properties.iata || ''}</strong>
-            <br />
-            ${properties.name || ''}
-            ${locationText ? `<br />${locationText}` : ''}
-            <br />
-            Movements: ${properties.movements || 0}
-          `)
-          .addTo(map)
-      })
-
-      for (const layerId of [
-        'flight-routes-line',
-        'flight-airports-circle'
-      ]) {
-        map.on('mouseenter', layerId, () => {
-          map.getCanvas().style.cursor = 'pointer'
-        })
-
-        map.on('mouseleave', layerId, () => {
-          map.getCanvas().style.cursor = ''
-        })
-      }
-
-      window.setTimeout(() => {
-        map.resize()
-        map.triggerRepaint()
-      }, 300)
+      route.addTo(routeLayer)
     })
 
-    const resizeMap = () => {
-      map.resize()
-      map.triggerRepaint()
-    }
-
-    window.addEventListener('resize', resizeMap)
-
-    return () => {
-      window.removeEventListener('resize', resizeMap)
-      delete window.flightMap
-      map.remove()
-      mapRef.current = null
-    }
-  }, [])
+    console.log(
+      'Leaflet routes displayed:',
+      routeLayer.getLayers().length
+    )
+  }, [routes])
 
   /*
-   * Update the source data when filters change.
-   * This does not move or zoom the map.
+   * Rebuild visible airport markers whenever the filters change.
    */
   useEffect(() => {
     const map = mapRef.current
+    const airportLayer = airportLayerRef.current
 
-    if (!map) {
+    if (!map || !airportLayer) {
       return
     }
 
-    const updateRoutes = () => {
-      const source = map.getSource('flight-routes')
+    airportLayer.clearLayers()
 
-      if (source) {
-        source.setData(routes || EMPTY_GEOJSON)
-        map.triggerRepaint()
+    const features = airports?.features || []
 
-        console.log(
-          'Visible routes updated:',
-          routes?.features?.length || 0
-        )
+    features.forEach(feature => {
+      if (
+        feature?.geometry?.type !== 'Point' ||
+        !Array.isArray(feature.geometry.coordinates)
+      ) {
+        return
       }
-    }
 
-    if (map.loaded()) {
-      updateRoutes()
-    } else {
-      map.once('load', updateRoutes)
-    }
-  }, [routes])
+      const longitude = Number(
+        feature.geometry.coordinates[0]
+      )
 
-  useEffect(() => {
-    const map = mapRef.current
+      const latitude = Number(
+        feature.geometry.coordinates[1]
+      )
 
-    if (!map) {
-      return
-    }
-
-    const updateAirports = () => {
-      const source = map.getSource('flight-airports')
-
-      if (source) {
-        source.setData(airports || EMPTY_GEOJSON)
-        map.triggerRepaint()
-
-        console.log(
-          'Visible airports updated:',
-          airports?.features?.length || 0
-        )
+      if (
+        !Number.isFinite(latitude) ||
+        !Number.isFinite(longitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180
+      ) {
+        return
       }
-    }
 
-    if (map.loaded()) {
-      updateAirports()
-    } else {
-      map.once('load', updateAirports)
-    }
+      const properties = feature.properties || {}
+      const movements = Number(properties.movements) || 1
+
+      const radius = Math.min(
+        14,
+        4 + Math.sqrt(movements) * 0.8
+      )
+
+      const marker = L.circleMarker(
+        [latitude, longitude],
+        {
+          radius,
+          color: '#ffffff',
+          weight: 1.5,
+          fillColor: '#ef4444',
+          fillOpacity: 0.88
+        }
+      )
+
+      const locationText = [
+        properties.city,
+        properties.country
+      ]
+        .filter(Boolean)
+        .join(', ')
+
+      marker.bindPopup(`
+        <strong>${properties.iata || ''}</strong>
+        ${
+          properties.name
+            ? `<br>${properties.name}`
+            : ''
+        }
+        ${
+          locationText
+            ? `<br>${locationText}`
+            : ''
+        }
+        <br>
+        Movements: ${movements}
+      `)
+
+      marker.bindTooltip(
+        `${properties.iata || ''}: ${movements} movements`,
+        {
+          direction: 'top',
+          offset: [0, -4]
+        }
+      )
+
+      marker.addTo(airportLayer)
+    })
+
+    console.log(
+      'Leaflet airports displayed:',
+      airportLayer.getLayers().length
+    )
   }, [airports])
 
   return (
