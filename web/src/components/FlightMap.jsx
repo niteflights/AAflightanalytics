@@ -1,12 +1,22 @@
 import React, { useEffect, useRef } from 'react'
-import maplibregl from 'maplibre-gl'
+import {
+  Map,
+  NavigationControl,
+  FullscreenControl,
+  Popup
+} from 'maplibre-gl'
 
 const EMPTY = {
   type: 'FeatureCollection',
   features: []
 }
 
-export default function FlightMap({ routes, airports, flights, onSelectFlight }) {
+export default function FlightMap({
+  routes,
+  airports,
+  flights,
+  onSelectFlight
+}) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const flightsRef = useRef([])
@@ -18,15 +28,15 @@ export default function FlightMap({ routes, airports, flights, onSelectFlight })
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return
 
-    const map = new maplibregl.Map({
+    const map = new Map({
       container: containerRef.current,
       style: 'https://tiles.openfreemap.org/styles/bright',
       center: [10, 35],
       zoom: 1.4
     })
 
-    map.addControl(new maplibregl.NavigationControl(), 'top-right')
-    map.addControl(new maplibregl.FullscreenControl(), 'top-right')
+    map.addControl(new NavigationControl(), 'top-right')
+    map.addControl(new FullscreenControl(), 'top-right')
 
     map.on('load', () => {
       map.addSource('routes', {
@@ -70,37 +80,42 @@ export default function FlightMap({ routes, airports, flights, onSelectFlight })
         }
       })
 
-      map.on('click', 'routes-line', (e) => {
-        const feature = e.features?.[0]
+      map.on('click', 'routes-line', event => {
+        const feature = event.features?.[0]
         if (!feature) return
 
         const flight = flightsRef.current.find(
-          f => Number(f.id) === Number(feature.properties.id)
+          item => Number(item.id) === Number(feature.properties.id)
         )
 
-        if (flight) onSelectFlight(flight)
+        if (flight && onSelectFlight) {
+          onSelectFlight(flight)
+        }
 
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
+        new Popup()
+          .setLngLat(event.lngLat)
           .setHTML(`
             <b>${feature.properties.from} → ${feature.properties.to}</b><br/>
             ${feature.properties.date}<br/>
-            ${feature.properties.operator || ''} ${feature.properties.flightNumber || ''}<br/>
-            ${Math.round(feature.properties.distanceKm || 0).toLocaleString()} km
+            ${feature.properties.operator || ''}
+            ${feature.properties.flightNumber || ''}<br/>
+            ${Math.round(
+              Number(feature.properties.distanceKm) || 0
+            ).toLocaleString()} km
           `)
           .addTo(map)
       })
 
-      map.on('click', 'airports-circle', (e) => {
-        const p = e.features?.[0]?.properties
-        if (!p) return
+      map.on('click', 'airports-circle', event => {
+        const properties = event.features?.[0]?.properties
+        if (!properties) return
 
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
+        new Popup()
+          .setLngLat(event.lngLat)
           .setHTML(`
-            <b>${p.iata}</b><br/>
-            ${p.name || ''}<br/>
-            Movements: ${p.movements || 0}
+            <b>${properties.iata}</b><br/>
+            ${properties.name || ''}<br/>
+            Movements: ${properties.movements || 0}
           `)
           .addTo(map)
       })
@@ -113,28 +128,38 @@ export default function FlightMap({ routes, airports, flights, onSelectFlight })
         map.getCanvas().style.cursor = ''
       })
 
-      setTimeout(() => map.resize(), 300)
+      window.setTimeout(() => map.resize(), 300)
     })
 
-    window.addEventListener('resize', () => map.resize())
+    const resizeMap = () => map.resize()
+    window.addEventListener('resize', resizeMap)
 
     mapRef.current = map
-  }, [])
+
+    return () => {
+      window.removeEventListener('resize', resizeMap)
+      map.remove()
+      mapRef.current = null
+    }
+  }, [onSelectFlight])
 
   useEffect(() => {
     const map = mapRef.current
     if (!map || !routes || !airports) return
 
     const updateSources = () => {
-      if (map.getSource('routes')) {
-        map.getSource('routes').setData(routes)
+      const routesSource = map.getSource('routes')
+      const airportsSource = map.getSource('airports')
+
+      if (routesSource) {
+        routesSource.setData(routes)
       }
 
-      if (map.getSource('airports')) {
-        map.getSource('airports').setData(airports)
+      if (airportsSource) {
+        airportsSource.setData(airports)
       }
 
-      setTimeout(() => map.resize(), 100)
+      window.setTimeout(() => map.resize(), 100)
     }
 
     if (map.isStyleLoaded()) {
