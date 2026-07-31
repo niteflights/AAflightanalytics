@@ -6,7 +6,7 @@ import {
   Popup
 } from 'maplibre-gl'
 
-const EMPTY = {
+const EMPTY_GEOJSON = {
   type: 'FeatureCollection',
   features: []
 }
@@ -26,96 +26,164 @@ export default function FlightMap({
   }, [flights])
 
   useEffect(() => {
-    if (mapRef.current || !containerRef.current) return
+    if (mapRef.current || !containerRef.current) {
+      return
+    }
 
     const map = new Map({
       container: containerRef.current,
-      style: 'https://tiles.openfreemap.org/styles/bright',
+      style: 'https://demotiles.maplibre.org/style.json',
       center: [10, 35],
       zoom: 1.4
     })
 
-    map.addControl(new NavigationControl(), 'top-right')
-    map.addControl(new FullscreenControl(), 'top-right')
+    map.on('error', event => {
+      console.error('MapLibre error:', event.error || event)
+    })
+
+    map.addControl(
+      new NavigationControl(),
+      'top-right'
+    )
+
+    map.addControl(
+      new FullscreenControl(),
+      'top-right'
+    )
 
     map.on('load', () => {
-      map.addSource('routes', {
-        type: 'geojson',
-        data: routes || EMPTY
-      })
+      if (!map.getSource('routes')) {
+        map.addSource('routes', {
+          type: 'geojson',
+          data: routes || EMPTY_GEOJSON
+        })
+      }
 
-      map.addSource('airports', {
-        type: 'geojson',
-        data: airports || EMPTY
-      })
+      if (!map.getSource('airports')) {
+        map.addSource('airports', {
+          type: 'geojson',
+          data: airports || EMPTY_GEOJSON
+        })
+      }
 
-      map.addLayer({
-        id: 'routes-line',
-        type: 'line',
-        source: 'routes',
-        paint: {
-          'line-color': '#2563eb',
-          'line-width': 2,
-          'line-opacity': 0.65
-        }
-      })
+      if (!map.getLayer('routes-line')) {
+        map.addLayer({
+          id: 'routes-line',
+          type: 'line',
+          source: 'routes',
+          layout: {
+            'line-cap': 'round',
+            'line-join': 'round'
+          },
+          paint: {
+            'line-color': '#2563eb',
+            'line-width': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              1,
+              1.2,
+              5,
+              2.5,
+              9,
+              4
+            ],
+            'line-opacity': 0.7
+          }
+        })
+      }
 
-      map.addLayer({
-        id: 'airports-circle',
-        type: 'circle',
-        source: 'airports',
-        paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['get', 'movements'],
-            1, 4,
-            20, 8,
-            100, 18
-          ],
-          'circle-color': '#ef4444',
-          'circle-opacity': 0.85,
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#ffffff'
-        }
-      })
+      if (!map.getLayer('airports-circle')) {
+        map.addLayer({
+          id: 'airports-circle',
+          type: 'circle',
+          source: 'airports',
+          paint: {
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', 'movements'], 1],
+              1,
+              4,
+              20,
+              7,
+              100,
+              16
+            ],
+            'circle-color': '#ef4444',
+            'circle-opacity': 0.85,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#ffffff'
+          }
+        })
+      }
 
       map.on('click', 'routes-line', event => {
         const feature = event.features?.[0]
-        if (!feature) return
 
-        const flight = flightsRef.current.find(
-          item => Number(item.id) === Number(feature.properties.id)
+        if (!feature) {
+          return
+        }
+
+        const selectedId = Number(feature.properties?.id)
+
+        const selectedFlight = flightsRef.current.find(
+          flight => Number(flight.id) === selectedId
         )
 
-        if (flight && onSelectFlight) {
-          onSelectFlight(flight)
+        if (selectedFlight && onSelectFlight) {
+          onSelectFlight(selectedFlight)
         }
+
+        const distance = Number(
+          feature.properties?.distanceKm
+        )
+
+        const distanceText = Number.isFinite(distance)
+          ? `${Math.round(distance).toLocaleString()} km`
+          : 'Distance unavailable'
 
         new Popup()
           .setLngLat(event.lngLat)
           .setHTML(`
-            <b>${feature.properties.from} → ${feature.properties.to}</b><br/>
-            ${feature.properties.date}<br/>
-            ${feature.properties.operator || ''}
-            ${feature.properties.flightNumber || ''}<br/>
-            ${Math.round(
-              Number(feature.properties.distanceKm) || 0
-            ).toLocaleString()} km
+            <strong>
+              ${feature.properties?.from || ''}
+              →
+              ${feature.properties?.to || ''}
+            </strong>
+            <br />
+            ${feature.properties?.date || ''}
+            <br />
+            ${feature.properties?.operator || ''}
+            ${feature.properties?.flightNumber || ''}
+            <br />
+            ${distanceText}
           `)
           .addTo(map)
       })
 
       map.on('click', 'airports-circle', event => {
-        const properties = event.features?.[0]?.properties
-        if (!properties) return
+        const properties =
+          event.features?.[0]?.properties
+
+        if (!properties) {
+          return
+        }
 
         new Popup()
           .setLngLat(event.lngLat)
           .setHTML(`
-            <b>${properties.iata}</b><br/>
-            ${properties.name || ''}<br/>
-            Movements: ${properties.movements || 0}
+            <strong>${properties.iata || ''}</strong>
+            <br />
+            ${properties.name || ''}
+            <br />
+            ${properties.city || ''}
+            ${properties.country
+              ? `, ${properties.country}`
+              : ''}
+            <br />
+            Movements:
+            ${properties.movements || 0}
           `)
           .addTo(map)
       })
@@ -128,16 +196,33 @@ export default function FlightMap({
         map.getCanvas().style.cursor = ''
       })
 
-      window.setTimeout(() => map.resize(), 300)
+      map.on('mouseenter', 'airports-circle', () => {
+        map.getCanvas().style.cursor = 'pointer'
+      })
+
+      map.on('mouseleave', 'airports-circle', () => {
+        map.getCanvas().style.cursor = ''
+      })
+
+      window.setTimeout(() => {
+        map.resize()
+      }, 250)
     })
 
-    const resizeMap = () => map.resize()
+    const resizeMap = () => {
+      map.resize()
+    }
+
     window.addEventListener('resize', resizeMap)
 
     mapRef.current = map
 
     return () => {
-      window.removeEventListener('resize', resizeMap)
+      window.removeEventListener(
+        'resize',
+        resizeMap
+      )
+
       map.remove()
       mapRef.current = null
     }
@@ -145,7 +230,10 @@ export default function FlightMap({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !routes || !airports) return
+
+    if (!map || !routes || !airports) {
+      return
+    }
 
     const updateSources = () => {
       const routesSource = map.getSource('routes')
@@ -159,7 +247,9 @@ export default function FlightMap({
         airportsSource.setData(airports)
       }
 
-      window.setTimeout(() => map.resize(), 100)
+      window.setTimeout(() => {
+        map.resize()
+      }, 100)
     }
 
     if (map.isStyleLoaded()) {
@@ -169,5 +259,11 @@ export default function FlightMap({
     }
   }, [routes, airports])
 
-  return <div className="map" ref={containerRef} />
+  return (
+    <div
+      ref={containerRef}
+      className="map"
+      aria-label="Interactive flight map"
+    />
+  )
 }
