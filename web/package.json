@@ -9,7 +9,7 @@
     "vite": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "maplibre-gl": "latest"
-  },
-  "devDependencies": {}
+    "leaflet": "^1.9.4",
+    "lucide-react": "latest"
+  }
 }
