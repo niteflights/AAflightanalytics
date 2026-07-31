@@ -15,22 +15,21 @@ const MAP_STYLE = {
   version: 8,
 
   sources: {
-    'osm-basemap': {
+    basemap: {
       type: 'raster',
       tiles: [
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
       ],
       tileSize: 256,
-      attribution:
-        '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap contributors'
     }
   },
 
   layers: [
     {
-      id: 'osm-basemap-layer',
+      id: 'basemap-layer',
       type: 'raster',
-      source: 'osm-basemap',
+      source: 'basemap',
       minzoom: 0,
       maxzoom: 19
     }
@@ -45,14 +44,37 @@ export default function FlightMap({
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
-  const flightsRef = useRef([])
+
+  /*
+   * These refs always hold the newest React props.
+   * This prevents the map load event from using stale data.
+   */
+  const routesRef = useRef(routes || EMPTY_GEOJSON)
+  const airportsRef = useRef(airports || EMPTY_GEOJSON)
+  const flightsRef = useRef(flights || [])
+  const onSelectFlightRef = useRef(onSelectFlight)
+
+  useEffect(() => {
+    routesRef.current = routes || EMPTY_GEOJSON
+  }, [routes])
+
+  useEffect(() => {
+    airportsRef.current = airports || EMPTY_GEOJSON
+  }, [airports])
 
   useEffect(() => {
     flightsRef.current = flights || []
   }, [flights])
 
   useEffect(() => {
-    if (mapRef.current || !containerRef.current) {
+    onSelectFlightRef.current = onSelectFlight
+  }, [onSelectFlight])
+
+  /*
+   * Create the map only once.
+   */
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) {
       return
     }
 
@@ -60,7 +82,8 @@ export default function FlightMap({
       container: containerRef.current,
       style: MAP_STYLE,
       center: [10, 35],
-      zoom: 1.4
+      zoom: 1.4,
+      renderWorldCopies: true
     })
 
     mapRef.current = map
@@ -84,27 +107,24 @@ export default function FlightMap({
 
     map.on('load', () => {
       /*
-       * Add flight-route data.
+       * Always create sources with empty GeoJSON first.
        */
       if (!map.getSource('flight-routes')) {
         map.addSource('flight-routes', {
           type: 'geojson',
-          data: routes || EMPTY_GEOJSON
+          data: EMPTY_GEOJSON
         })
       }
 
-      /*
-       * Add airport data.
-       */
       if (!map.getSource('flight-airports')) {
         map.addSource('flight-airports', {
           type: 'geojson',
-          data: airports || EMPTY_GEOJSON
+          data: EMPTY_GEOJSON
         })
       }
 
       /*
-       * Draw flight routes.
+       * Draw the flight routes.
        */
       if (!map.getLayer('flight-routes-line')) {
         map.addLayer({
@@ -124,18 +144,21 @@ export default function FlightMap({
               'interpolate',
               ['linear'],
               ['zoom'],
-              1, 1.2,
-              5, 2.5,
-              9, 4
+              0,
+              1.5,
+              4,
+              2.5,
+              8,
+              4
             ],
 
-            'line-opacity': 0.7
+            'line-opacity': 0.75
           }
         })
       }
 
       /*
-       * Draw airports.
+       * Draw airport markers.
        */
       if (!map.getLayer('flight-airports-circle')) {
         map.addLayer({
@@ -152,21 +175,56 @@ export default function FlightMap({
                 ['get', 'movements'],
                 1
               ],
-              1, 4,
-              20, 7,
-              100, 16
+              1,
+              4,
+              20,
+              7,
+              100,
+              15
             ],
 
             'circle-color': '#ef4444',
-            'circle-opacity': 0.85,
-            'circle-stroke-width': 1,
+            'circle-opacity': 0.9,
+            'circle-stroke-width': 1.5,
             'circle-stroke-color': '#ffffff'
           }
         })
       }
 
       /*
-       * Route click popup.
+       * The sources now exist.
+       * Insert the latest available data.
+       */
+      const routeSource =
+        map.getSource('flight-routes')
+
+      const airportSource =
+        map.getSource('flight-airports')
+
+      if (routeSource) {
+        routeSource.setData(
+          routesRef.current
+        )
+      }
+
+      if (airportSource) {
+        airportSource.setData(
+          airportsRef.current
+        )
+      }
+
+      console.log(
+        'Flight routes loaded:',
+        routesRef.current?.features?.length || 0
+      )
+
+      console.log(
+        'Airports loaded:',
+        airportsRef.current?.features?.length || 0
+      )
+
+      /*
+       * Route popup.
        */
       map.on(
         'click',
@@ -178,9 +236,11 @@ export default function FlightMap({
             return
           }
 
-          const flightId = Number(
-            feature.properties?.id
-          )
+          const properties =
+            feature.properties || {}
+
+          const flightId =
+            Number(properties.id)
 
           const selectedFlight =
             flightsRef.current.find(
@@ -190,14 +250,15 @@ export default function FlightMap({
 
           if (
             selectedFlight &&
-            onSelectFlight
+            onSelectFlightRef.current
           ) {
-            onSelectFlight(selectedFlight)
+            onSelectFlightRef.current(
+              selectedFlight
+            )
           }
 
-          const distance = Number(
-            feature.properties?.distanceKm
-          )
+          const distance =
+            Number(properties.distanceKm)
 
           const distanceText =
             Number.isFinite(distance)
@@ -210,15 +271,15 @@ export default function FlightMap({
             .setLngLat(event.lngLat)
             .setHTML(`
               <strong>
-                ${feature.properties?.from || ''}
+                ${properties.from || ''}
                 →
-                ${feature.properties?.to || ''}
+                ${properties.to || ''}
               </strong>
               <br />
-              ${feature.properties?.date || ''}
+              ${properties.date || ''}
               <br />
-              ${feature.properties?.operator || ''}
-              ${feature.properties?.flightNumber || ''}
+              ${properties.operator || ''}
+              ${properties.flightNumber || ''}
               <br />
               ${distanceText}
             `)
@@ -227,7 +288,7 @@ export default function FlightMap({
       )
 
       /*
-       * Airport click popup.
+       * Airport popup.
        */
       map.on(
         'click',
@@ -268,9 +329,6 @@ export default function FlightMap({
         }
       )
 
-      /*
-       * Pointer cursor over routes and airports.
-       */
       map.on(
         'mouseenter',
         'flight-routes-line',
@@ -328,13 +386,10 @@ export default function FlightMap({
       map.remove()
       mapRef.current = null
     }
-  }, [onSelectFlight])
+  }, [])
 
   /*
-   * Update the displayed routes and airports whenever
-   * the filters change.
-   *
-   * This preserves the current map position and zoom.
+   * Update routes whenever filters change.
    */
   useEffect(() => {
     const map = mapRef.current
@@ -343,39 +398,45 @@ export default function FlightMap({
       return
     }
 
-    const updateSources = () => {
-      const routesSource =
-        map.getSource('flight-routes')
-
-      const airportsSource =
-        map.getSource('flight-airports')
-
-      if (routesSource) {
-        routesSource.setData(
-          routes || EMPTY_GEOJSON
-        )
-      }
-
-      if (airportsSource) {
-        airportsSource.setData(
-          airports || EMPTY_GEOJSON
-        )
-      }
-
-      window.setTimeout(() => {
-        map.resize()
-      }, 100)
-    }
-
-    if (
-      map.loaded() &&
+    const source =
       map.getSource('flight-routes')
-    ) {
-      updateSources()
-    } else {
-      map.once('load', updateSources)
+
+    if (source) {
+      source.setData(
+        routes || EMPTY_GEOJSON
+      )
+
+      console.log(
+        'Updated visible routes:',
+        routes?.features?.length || 0
+      )
     }
-  }, [routes, airports])
+  }, [routes])
+
+  /*
+   * Update airport markers whenever filters change.
+   */
+  useEffect(() => {
+    const map = mapRef.current
+
+    if (!map) {
+      return
+    }
+
+    const source =
+      map.getSource('flight-airports')
+
+    if (source) {
+      source.setData(
+        airports || EMPTY_GEOJSON
+      )
+
+      console.log(
+        'Updated visible airports:',
+        airports?.features?.length || 0
+      )
+    }
+  }, [airports])
 
   return (
     <div
